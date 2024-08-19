@@ -1,37 +1,76 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { playbackService } from "@/constants/playbackService"
+import { colors } from "@/constants/tokens"
+import { useLogTrackPlayerState } from "@/hooks/useLogTrackPlayerState"
+import { useSetupTrackPlayer } from "@/hooks/useSetupTrackPlayer"
+import { SplashScreen, Stack } from "expo-router"
+import { StatusBar } from "expo-status-bar"
+import { useCallback } from "react"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+import TrackPlayer from "react-native-track-player"
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+SplashScreen.preventAutoHideAsync()
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+TrackPlayer.registerPlaybackService(() => playbackService)
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+const App = () => {
+ 
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+  const handleTrackPlayerLoaded = useCallback(() => {
+    SplashScreen.hideAsync()
+  },[])
 
-  if (!loaded) {
-    return null;
-  }
+  useSetupTrackPlayer({
+    onLoad: handleTrackPlayerLoaded
+  })
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </ThemeProvider>
-  );
+  useLogTrackPlayerState()
+  
+   return (
+  <SafeAreaProvider>
+    <GestureHandlerRootView style={{flex: 1}} >
+    
+      <RootNavigation />
+
+      <StatusBar style="auto" />
+    
+    </GestureHandlerRootView>
+    </SafeAreaProvider>
+   )
 }
+
+const RootNavigation = () => {
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false}} />
+      <Stack.Screen name="player" options={{
+        presentation: 'card',
+        gestureEnabled: true,
+        gestureDirection: 'vertical',
+        animationDuration: 400,
+        headerShown: false
+      }} />
+
+      <Stack.Screen 
+        name="(modals)/addToPlaylist"
+        options={{
+          presentation: 'modal',
+          headerStyle: {
+            backgroundColor: colors.background
+          },
+          headerTitle: 'Add tp playlist',
+          headerTitleStyle: {
+            color: colors.primary
+          },
+         
+          
+        }}
+        
+      />
+
+    </Stack>
+  )
+
+}
+
+export default App
